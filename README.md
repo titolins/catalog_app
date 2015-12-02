@@ -1,6 +1,7 @@
 # Catalog App
 
-Author: Tito Lins\n
+Author: Tito Lins
+
 Date: 2015-12-02
 
 ## About
