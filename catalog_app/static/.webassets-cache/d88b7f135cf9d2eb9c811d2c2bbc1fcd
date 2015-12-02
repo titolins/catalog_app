@@ -1,3 +1,0 @@
-Vbody {\u000a  padding-top: 15px;\u000a  padding-left: 40px;\u000a  padding-right: 40px; }\u000a\u000a  #navbar {\u000a    position: top static;\u000a    background: blue; }\u000a    #navbar h3 {\u000a      color: pink; }\u000a\u000a#footer {\u000a  position: bottom fixed; }\u000a
-p1
-.
