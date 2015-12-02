@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {{ super() }}
+    <div class="col-md-3" id="sidebar">
+        {% block sidebar_content %} {% endblock %}
+    </div>
+    <div class="col-md-9" id="main-content">
+        {% block main_content %} {% endblock %}
+    </div>
+{% endblock %}

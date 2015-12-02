@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- CSS -->
+        <!-- Bootstrap -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css')}}" >
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css')}}" >
+
+        <!-- Page title -->
+        <title>Catalog App - {% block title %}{% endblock %}</title>
+
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+    </head>
+    <body>
+        <!-- Navbar -->
+        <nav class="navbar navbar-inverse navbar-static-top" id="navbar-wrapper "role="navigation">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#catalog-nav" aria-expanded="false">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="{{ url_for('index') }}">Catalog App</a>
+                </div>
+                <!-- /.navbar-header -->
+                <div class="navbar-collapse collapse" id="catalog-nav" aria-expanded="false" style="height: 1px;">
+                    <ul class="nav navbar-nav navbar-right">
+                        {% if not session.username %}
+                            <li>
+                                <a href="{{ url_for('login') }}">Login</a>
+                            </li>
+                            {% else %}
+                            <li>
+                                <a href="{{ url_for('showUser', user_id=session.user_id) }}">Profile</a>
+                            </li>
+                            <li>
+                                <a href="{{ url_for('logout') }}">Logout</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <!-- /.navbar-collapse -->
+            </div>
+            <!-- /.container -->
+        </nav>
+
+        <!-- Page content -->
+        <div class="container" id="page-content-wrapper">
+            <div class="row" id="page-content">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="col-xs-12 alert alert-success">
+                            <ul>
+                                {% for message in messages %}
+                                    <li> <strong>{{ message }}</strong></li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                {% block content %} {% endblock %}
+            </div>
+            <!-- /.row -->
+        </div>
+        <!-- /.container -->
+
+        <!-- Footer -->
+        <div class="container" id="footer-wrapper">
+            <hr>
+            <footer>
+                <div class="row">
+                    <div class="col-md-12">
+                        <p>Catalog App</p>
+                    </div>
+                </div>
+            </footer>
+        </div>
+        <!-- /.container -->
+
+        <!-- JS Files -->
+        <!-- JQuery -->
+        <script src="{{ url_for('static', filename='js/jquery-1.11.3.min.js') }}"></script>
+
+        <!-- Bootstrap JS -->
+        <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+
+        <!-- Jinja block for adding any other scripts needed by any page
+            individually (such as OAuth scripts) -->
+        {% block scripts %}{% endblock %}
+    </body>
+</html>

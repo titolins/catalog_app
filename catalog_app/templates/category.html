@@ -1,0 +1,51 @@
+{% extends "categories_sidebar.html" %}
+
+{% block title %}
+    {{ super() }}
+    {{ category.title }}
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-xs-6">
+            <p class="h3 header">{{ category.title }}</h3>
+        </div>
+        {% if session.username %}
+            <div class="col-xs-6 text-right">
+                <a type="button" class="btn btn-default btn-lg" href="{{ url_for('newItem', category_id=category.id) }}">
+                    <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                      Add Item
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    <hr>
+    <div class="row">
+        {% if is_empty and session.username %}
+            <div class="col-xs-12">
+                <a type="button" class="btn btn-default btn-lg"
+                    href="{{ url_for('deleteCategory', category_id=category.id)}}">
+                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                     Delete category
+                </a>
+            </div>
+        {% else %}
+            {% for item in items %}
+                <div class="col-sm-6 col-md-4">
+                    <img src="{{ url_for('static', filename=item.picture) }}"
+                        alt="Item picture" width="150px" height="150px"/>
+                    <h4>
+                        <a href="{{ url_for('showItem', item_id=item.id,
+                                            category_id=item.category_id) }}">
+                            {{ item.title }}
+                        </a>
+                    </h4>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+    <!-- CSRF -->
+    <form method="post" action="/">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    </form>
+{% endblock %}

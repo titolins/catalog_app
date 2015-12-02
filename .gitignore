@@ -1,0 +1,5 @@
+catalog_app.db
+catalog_app/catalog_app.db
+catalog_app/populatedb.py
+catalog_app/__pycache__/__init__.cpython-34.pyc
+.python-version

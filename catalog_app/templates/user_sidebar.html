@@ -1,0 +1,17 @@
+{% extends 'sidebar.html' %}
+
+{% block sidebar_content %}
+    {{ super() }}
+    <p class="lead">{{ user.name }}</p>
+    <div class="list-group">
+        <a href="{{ url_for('showUser', user_id=user.id)}}" class="list-group-item">
+            Profile
+        </a>
+        <a href="{{ url_for('showUserItems', user_id=user.id) }}" class="list-group-item">
+            Items
+        </a>
+        <a href="{{ url_for('logout') }}" class="list-group-item">
+            Logout
+        </a>
+    </div>
+{% endblock %}

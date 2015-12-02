@@ -1,0 +1,43 @@
+
+html, body {
+    height: 100%;
+    display: block;
+}
+
+.back-btn {
+    margin-top: 2em;
+}
+
+#header {
+    margin-bottom:0;
+}
+
+#navbar-wrapper {
+    height: 15%;
+}
+
+#page-content-wrapper {
+    height: 70%;
+    padding-top: 2em;
+}
+
+#page-content {
+    height: 100%;
+}
+
+#footer-wrapper {
+    height: 15%;
+}
+
+#main-content {
+    height: 100%;
+}
+
+@media (min-width: 992px) {
+    #main-content {
+        padding-left: 5em;
+    }
+    #sidebar {
+        padding-top: 1.5em;
+    }
+}

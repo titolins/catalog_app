@@ -1,0 +1,26 @@
+{% extends 'sidebar.html' %}
+
+{% block sidebar_content %}
+    {{ super() }}
+    <p class="lead">Categories</p>
+    <div class="list-group">
+        {% if categories %}
+            {% for category in categories %}
+                <a href="{{ url_for('showCategory', category_id=category.id) }}"
+                    class="list-group-item">
+                {{ category.title }}
+                </a>
+            {% endfor %}
+        {% else %}
+            <p>
+                There are currently no categories for you to browse, please login
+                to create a new category and start using the app!
+            </p>
+        {% endif %}
+    </div>
+    {% if session.username %}
+        <a type="button" class="btn btn-default btn-lg" href="{{ url_for('newCategory') }}">
+            <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+        </a>
+    {% endif %}
+{% endblock %}
