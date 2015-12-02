@@ -8,6 +8,8 @@ Date: 2015-12-02
 
 This is the third exercise required for the completion of Udacity's [Full Stack Web Developer Nanodegree's.](https://www.udacity.com/course/full-stack-web-developer-nanodegree--nd004)
 
+The objective in this exercise was to create an application that was able to provide a list of items registered within certain categories. The application should also provide a user registration and authentication system based on third-party OAuth providers, allowing registered users to create, edit and delete items. Any user, registered or not, may browse the items.
+
 ## Requirements
 
 

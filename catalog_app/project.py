@@ -1,22 +1,33 @@
-from flask import (render_template, url_for, request, redirect, flash, jsonify,
-    make_response)
+from flask import (
+    render_template,
+    url_for,
+    request,
+    redirect,
+    flash,
+    jsonify,
+    make_response
+)
+
 from catalog_app import app, session
+
 from catalog_app.forms import NewItem, EditItem, CategoryForm
 
 from database_setup import User, Category, Item
 
 from flask import session as login_session
 
-from oauth2client.client import (flow_from_clientsecrets, FlowExchangeError,
-    OAuth2Credentials)
-import httplib2, requests
+from oauth2client.client import (
+    flow_from_clientsecrets,
+    FlowExchangeError,
+    OAuth2Credentials
+)
 
-import random, string, json, os
-
-CLIENT_ID = json.loads(
-        open('client_secrets.json', 'r').read())['web']['client_id']
-
-APP_NAME = "Catalog App"
+import httplib2
+import requests
+import random
+import string
+import json
+import os
 
 
 @app.route('/')
@@ -74,11 +85,13 @@ def showCategory(category_id):
     # we will let jinja know if there aren't items in this category, so it may
     # render the delete button
     is_empty = not items
-    return render_template('category.html',
-                            categories=categories,
-                            category=category,
-                            items=items,
-                            is_empty=is_empty)
+    return render_template(
+        'category.html',
+        categories=categories,
+        category=category,
+        items=items,
+        is_empty=is_empty
+    )
 
 
 # DELETE
@@ -126,9 +139,10 @@ def newItem(category_id):
     if request.files:
         form.picture.data = request.files['picture']
     if request.method == 'POST' and form.validate():
-    # After validating the form, we build the item object with the formatted
-    # title and with an empty string for the picture.
-    # We need to do this because we will use the item id to save the picture.
+        # After validating the form, we build the item object with the
+        # formatted title and with an empty string for the picture.
+        # We need to do this because we will use the item id to save the
+        # picture.
         new_item = Item(
             title=' '.join(
                 name.capitalize() for name in form.title.data.split()
@@ -152,7 +166,8 @@ def newItem(category_id):
         return render_template(
             'newitem.html',
             category=category,
-            form=form)
+            form=form
+        )
 
 
 # READ
@@ -165,15 +180,19 @@ def showItem(category_id, item_id):
     is_owner = False
     if 'user_id' in login_session:
         is_owner = (item.user_id == login_session['user_id'])
-    return render_template('item.html',
-                            category=category,
-                            item=item,
-                            is_owner=is_owner)
+    return render_template(
+        'item.html',
+        category=category,
+        item=item,
+        is_owner=is_owner
+    )
 
 
 # UPDATE
-@app.route('/catalog/<int:category_id>/<int:item_id>/edit',
-    methods=['GET', 'POST'])
+@app.route(
+    '/catalog/<int:category_id>/<int:item_id>/edit',
+    methods=['GET', 'POST']
+)
 def editItem(category_id, item_id):
     item = getItemInfo(item_id)
     category = getCategoryInfo(category_id)
@@ -207,25 +226,31 @@ def editItem(category_id, item_id):
                     item_id=item.id
                 )
             )
-        return render_template('edititem.html',
+        return render_template(
+            'edititem.html',
             category=category,
             item=item,
-            form=form)
+            form=form
+        )
     return unauthorizedAccess()
 
 
 # DELETE
-@app.route('/catalog/<int:category_id>/<int:item_id>/delete',
-    methods=['GET', 'POST'])
+@app.route(
+    '/catalog/<int:category_id>/<int:item_id>/delete',
+    methods=['GET', 'POST']
+)
 def deleteItem(category_id, item_id):
     item = getItemInfo(item_id)
     category = getCategoryInfo(category_id)
     # Only the item creator may delete it
     if (item.user_id == login_session['user_id']):
         if request.method == 'GET':
-            return render_template('deleteitem.html',
+            return render_template(
+                'deleteitem.html',
                 category=category,
-                item=item)
+                item=item
+            )
         else:
             # Before deleting the item from the db, we delete it's picture file
             deleteItemPicture(item.picture)
@@ -261,14 +286,14 @@ def createUser(login_session):
         - picture
     '''
     # We are presuming that the username and email will be formatted correctly
-    newUser = User(
-        name = login_session['username'],
-        email = login_session['email'],
-        picture = login_session['picture']
+    new_user = User(
+        name=login_session['username'],
+        email=login_session['email'],
+        picture=login_session['picture']
     )
     session.add(newUser)
     session.commit()
-    user = session.query(User).filter_by(email = login_session['email']).one()
+    user = getUserByEmail(login_session['email'])
     return user.id
 
 
@@ -353,8 +378,10 @@ def categoryItemsJSON(category_id):
 @app.route('/login')
 def login():
     if 'username' not in login_session:
-        state = ''.join(random.choice(string.ascii_uppercase + string.digits)
-                for x in xrange(32))
+        state = ''.join(
+            random.choice(string.ascii_uppercase + string.digits)
+            for x in xrange(32)
+        )
         login_session['state'] = state
         return render_template('login.html', STATE=login_session['state'])
     flash('You are already logged in!!!')
@@ -422,10 +449,12 @@ def gconnect():
     access_token = credentials.access_token
 
     # validate the access_token
-    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
-            % access_token)
+    url = (
+        'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
+        % access_token
+    )
     h = httplib2.Http()
-    result = json.loads(h.request(url,'GET')[1])
+    result = json.loads(h.request(url, 'GET')[1])
     # check if we got no errors or any odd result
     if result.get('error') is not None:
         response = make_response(json.dumps(result.get('error')), 500)
@@ -436,7 +465,9 @@ def gconnect():
             json.dumps("Token's user ID doesn't match given user ID."), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
-    if result['issued_to'] != CLIENT_ID:
+    client_id = json.loads(
+        open('client_secrets.json', 'r').read())['web']['client_id']
+    if result['issued_to'] != client_id:
         response = make_response(
             json.dumps("Token's client ID does not match app's"), 401)
         print "Token's client ID does not match app's."
@@ -458,7 +489,7 @@ def gconnect():
 
     # get user info
     userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
-    params = {'access_token': credentials.access_token, 'alt':'json'}
+    params = {'access_token': credentials.access_token, 'alt': 'json'}
     answer = requests.get(userinfo_url, params=params)
     data = json.loads(answer.text)
 
@@ -484,7 +515,7 @@ def gdisconnect():
     '''
     credentials = OAuth2Credentials.from_json(login_session.get('credentials'))
     access_token = credentials.access_token
-    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s'%access_token
+    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
     return result
@@ -512,17 +543,18 @@ def fbconnect():
     access_token = request.data
 
     # get the app_id and app_secret from the json file
-    app_id= json.loads(
+    app_id = json.loads(
         open('fb_client_secrets.json', 'r').read())['web']['app_id']
     app_secret = json.loads(
         open('fb_client_secrets.json', 'r').read())['web']['app_secret']
 
     # url for exchanging the exchange token for the access token
-    url = ("https://graph.facebook.com/oauth/access_token?"
-            "grant_type=fb_exchange_token&"
-            "client_id=%s&client_secret=%s&fb_exchange_token=%s" %
-            (app_id, app_secret, access_token)
-        )
+    url = (
+        "https://graph.facebook.com/oauth/access_token?"
+        "grant_type=fb_exchange_token&"
+        "client_id=%s&client_secret=%s&fb_exchange_token=%s" %
+        (app_id, app_secret, access_token)
+    )
     # request the access token
     h = httplib2.Http()
     result = h.request(url, 'GET')[1]
@@ -539,7 +571,7 @@ def fbconnect():
 
     # now our result contains all the information we need to populate the
     # login_session
-    #print 'result: %s'%result
+    # print 'result: %s'%result
     data = json.loads(result)
 
     login_session['username'] = data['name']
@@ -618,14 +650,22 @@ def getUserInfo(user_id):
     return user
 
 
+def getUserByEmail(email):
+    try:
+        user = session.query(User).filter_by(email=email).one()
+        return User
+    except:
+        return None
+
+
 def getUserID(email):
     ''' Returns an user's id, given it's email.
 
     This method is used by the oauth login methods to check if there's an
     user with the received email.
     '''
+    user = getUserItems(email)
     try:
-        user = session.query(User).filter_by(email = email).one()
         return user.id
     except:
         return None

@@ -1,3 +1,4 @@
+*.pyc
 catalog_app.db
 catalog_app/catalog_app.db
 catalog_app/populatedb.py

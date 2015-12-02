@@ -1,6 +1,13 @@
 from flask.ext.wtf import Form
-from wtforms import (TextField, TextAreaField, validators, SubmitField,
-    ValidationError)
+
+from wtforms import (
+    TextField,
+    TextAreaField,
+    validators,
+    SubmitField,
+    ValidationError
+)
+
 from flask_wtf.file import FileField, FileAllowed, FileRequired
 
 from sqlalchemy import func
@@ -21,7 +28,7 @@ class Unique(object):
 
     def __call__(self, form, field):
         object = session.query(self.model).filter(
-            func.lower(self.field)==func.lower(field.data)).first()
+            func.lower(self.field) == func.lower(field.data)).first()
         if object:
             raise ValidationError(self.message)
 
@@ -63,11 +70,6 @@ class EditItem(Form):
             self.description.errors = (msg,)
             self.picture.errors = (msg,)
             return False
-        #if not self.title.validate(self,
-        #   validators.Length(min=6, max=24)(self, self.title)):
-        # had to do it by hand because the above method was
-        # raising an exception instead of passing the error msg to be rendered
-        # in the template
         # title validation
         if self.title.data:
             try:
