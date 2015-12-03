@@ -1,4 +1,4 @@
-## Catalog App
+##ll Catalog App
 #### About
 * This is the third exercise required for the completion of Udacity's [Full Stack Web Developer Nanodegree's.](https://www.udacity.com/course/full-stack-web-developer-nanodegree--nd004)
 
@@ -18,12 +18,14 @@
 ```bash
 pip install -r requirements.txt
 ```
-* Create the database:
+* Change into the app's package directory and create the database:
 ```bash
-python catalog_app/database_setup.py
+cd catalog_app
+python database_setup.py
 ```
-* Run the application with:
+* Change back to the last directory and run the development server with:
 ```bash
+cd ../
 python runserver.py
 ```
 * Now open your browser and access http://localhost:5000/
