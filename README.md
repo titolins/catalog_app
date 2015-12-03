@@ -1,4 +1,4 @@
-##ll Catalog App
+## Catalog App
 #### About
 * This is the third exercise required for the completion of Udacity's [Full Stack Web Developer Nanodegree's.](https://www.udacity.com/course/full-stack-web-developer-nanodegree--nd004)
 
