@@ -28,12 +28,14 @@ class Category(Base):
 
     id = Column(Integer, primary_key=True)
     title = Column(String(50), nullable=False, unique=True)
+    items = relationship("Item", backref="category")
 
     @property
     def serialize(self):
         return {
             'id': self.id,
             'title': self.title,
+            'items': [i.serialize for i in self.items]
         }
 
 
@@ -45,7 +47,6 @@ class Item(Base):
     description = Column(String(500), nullable=False)
     picture = Column(String(250), nullable=False)
     category_id = Column(Integer, ForeignKey('category.id'))
-    category = relationship(Category)
     user_id = Column(Integer, ForeignKey('user.id'))
     user = relationship(User)
 

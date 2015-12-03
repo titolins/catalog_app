@@ -22,18 +22,68 @@ from oauth2client.client import (
     OAuth2Credentials
 )
 
+from functools import wraps
 import httplib2
 import requests
 import random
 import string
 import json
 import os
+import dicttoxml
 
 
 @app.route('/')
 def index():
     categories = getAllCategories()
     return render_template('index.html', categories=categories)
+
+
+##############
+# Decorators #
+##############
+
+
+def login_required(restricted_function):
+    ''' Decorator for use with pages that require login access
+    '''
+    @wraps(restricted_function)
+    def wrap(*args, **kwargs):
+        if 'username' in login_session:
+            return restricted_function(*args, **kwargs)
+        else:
+            flash("You need to login for that!")
+            return redirect(url_for('login'))
+    return wrap
+
+
+def require_owner(f):
+    ''' Decorator for use with pages that require it's creator
+    '''
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        item = getItemInfo(kwargs['item_id'])
+        if item.user_id == login_session['user_id']:
+            return f(*args, **kwargs)
+        flash("Only the item creator may edit or delete it")
+        return redirect(url_for('index'))
+    return wrap
+
+
+def require_user(f):
+    ''' Decorator for use with pages that require the currently logged in user
+    '''
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        if kwargs['user_id'] == login_session['user_id']:
+            return f(*args, **kwargs)
+        flash("Only the user may have access to it's profile or delete it")
+        return redirect(url_for('index'))
+    return wrap
+
+
+##################
+# End Decorators #
+##################
 
 
 ########
@@ -53,9 +103,8 @@ def index():
 
 # CREATE
 @app.route('/catalog/new/', methods=['GET', 'POST'])
+@login_required
 def newCategory():
-    if 'username' not in login_session:
-        return redirect(url_for('login'))
     # Create the WTForm
     form = CategoryForm(request.form)
     if request.method == 'POST' and form.validate():
@@ -80,30 +129,26 @@ def showCategory(category_id):
     # We still need all categories here to show the categories sidebar
     categories = getAllCategories()
     category = getCategoryInfo(category_id)
-    # get the category items for display
-    items = getCategoryItems(category_id)
     # we will let jinja know if there aren't items in this category, so it may
     # render the delete button
-    is_empty = not items
+    is_empty = not category.items
     return render_template(
         'category.html',
         categories=categories,
         category=category,
-        items=items,
+        items=category.items,
         is_empty=is_empty
     )
 
 
 # DELETE
 @app.route('/catalog/<int:category_id>/delete', methods=['GET', 'POST'])
+@login_required
 def deleteCategory(category_id):
     category = getCategoryInfo(category_id)
     # we still need to check for the emptiness of the category so we may
     # protect categories that are not empty from deletion
-    items = getCategoryItems(category_id)
-    is_empty = not items
-    # protect not empty categories and restrict to logged in users
-    if 'username' in login_session and is_empty:
+    if not category.items:
         if request.method == 'GET':
             return render_template('deletecategory.html', category=category)
         else:
@@ -111,7 +156,8 @@ def deleteCategory(category_id):
             session.commit()
             flash("Successfully deleted category %s" % category.title)
             return redirect(url_for('index'))
-    return unauthorizedAccess()
+    flash("A category may only be deleted if it doesn't have any items")
+    return redirect(url_for('showCategory', category_id=category.id))
 
 
 ################
@@ -126,11 +172,8 @@ def deleteCategory(category_id):
 
 # CREATE
 @app.route('/catalog/<int:category_id>/new', methods=['GET', 'POST'])
+@login_required
 def newItem(category_id):
-    # restrict item creation to logged in users
-    if 'username' not in login_session:
-        return redirect(url_for('login'))
-
     category = getCategoryInfo(category_id)
     # create the WTForm
     form = NewItem(request.form)
@@ -193,46 +236,39 @@ def showItem(category_id, item_id):
     '/catalog/<int:category_id>/<int:item_id>/edit',
     methods=['GET', 'POST']
 )
+@login_required
+@require_owner
 def editItem(category_id, item_id):
     item = getItemInfo(item_id)
     category = getCategoryInfo(category_id)
-    # Only the item creator may edit it
-    if (item.user_id == login_session['user_id']):
-        # Create the WTForm
-        form = EditItem(request.form)
-        # Same as for the newItem.. we need to pass the file separately
-        # The difference is that this time it is not mandatory (only one of
-        # the fields are required for editing the item)
-        if request.files:
-            form.picture.data = request.files['picture']
-        if request.method == 'POST' and form.validate():
-            # We check which fields have been submitted for editing the item
-            # If we have a new title, format it accordingly
-            if form.title.data:
-                item.title = ' '.join(
-                    name.capitalize() for name in form.title.data.split()
-                )
-            if form.description.data:
-                item.description = form.description.data
-            if form.picture.data:
-                item.picture = saveItemPicture(form.picture.data, item.id)
-            session.add(item)
-            session.commit()
-            flash("Succesfully edited item %s" % item.title)
-            return redirect(
-                url_for(
-                    'showItem',
-                    category_id=category_id,
-                    item_id=item.id
-                )
+    form = EditItem(request.form)
+    if request.files:
+        form.picture.data = request.files['picture']
+    if request.method == 'POST' and form.validate():
+        if form.title.data:
+            item.title = ' '.join(
+                name.capitalize() for name in form.title.data.split()
             )
-        return render_template(
-            'edititem.html',
-            category=category,
-            item=item,
-            form=form
+        if form.description.data:
+            item.description = form.description.data
+        if form.picture.data:
+            item.picture = saveItemPicture(form.picture.data, item.id)
+        session.add(item)
+        session.commit()
+        flash("Succesfully edited item %s" % item.title)
+        return redirect(
+            url_for(
+                'showItem',
+                category_id=category_id,
+                item_id=item.id
+            )
         )
-    return unauthorizedAccess()
+    return render_template(
+        'edititem.html',
+        category=category,
+        item=item,
+        form=form
+    )
 
 
 # DELETE
@@ -240,25 +276,24 @@ def editItem(category_id, item_id):
     '/catalog/<int:category_id>/<int:item_id>/delete',
     methods=['GET', 'POST']
 )
+@login_required
+@require_owner
 def deleteItem(category_id, item_id):
     item = getItemInfo(item_id)
     category = getCategoryInfo(category_id)
-    # Only the item creator may delete it
-    if (item.user_id == login_session['user_id']):
-        if request.method == 'GET':
-            return render_template(
-                'deleteitem.html',
-                category=category,
-                item=item
-            )
-        else:
-            # Before deleting the item from the db, we delete it's picture file
-            deleteItemPicture(item.picture)
-            session.delete(item)
-            session.commit()
-            flash("Successfully deleted item %s" % item.title)
-            return redirect(url_for('showCategory', category_id=category.id))
-    return unauthorizedAccess()
+    if request.method == 'GET':
+        return render_template(
+            'deleteitem.html',
+            category=category,
+            item=item
+        )
+    else:
+        # Before deleting the item from the db, we delete it's picture file
+        deleteItemPicture(item.picture)
+        session.delete(item)
+        session.commit()
+        flash("Successfully deleted item %s" % item.title)
+        return redirect(url_for('showCategory', category_id=category.id))
 
 
 ############
@@ -291,7 +326,7 @@ def createUser(login_session):
         email=login_session['email'],
         picture=login_session['picture']
     )
-    session.add(newUser)
+    session.add(new_user)
     session.commit()
     user = getUserByEmail(login_session['email'])
     return user.id
@@ -299,38 +334,32 @@ def createUser(login_session):
 
 # READ
 @app.route('/user/<int:user_id>')
+@require_user
 def showUser(user_id):
-    # Only the user may have access to it's profile
-    if (user_id == login_session['user_id']):
-        user = session.query(User).filter_by(id=user_id).one()
-        return render_template('user.html', user=user)
-    return unauthorizedAccess()
+    user = session.query(User).filter_by(id=user_id).one()
+    return render_template('user.html', user=user)
 
 
 # Second page of the profile. Displays all items created by the user
 @app.route('/user/<int:user_id>/items')
+@require_user
 def showUserItems(user_id):
-    # Again, only the user has access to this page
-    if (user_id == login_session['user_id']):
-        user = getUserInfo(user_id)
-        items = getUserItems(user_id)
-        return render_template('useritems.html', user=user, items=items)
-    return unauthorizedAccess()
+    user = getUserInfo(user_id)
+    items = getUserItems(user_id)
+    return render_template('useritems.html', user=user, items=items)
 
 
 # DELETE
 @app.route('/user/<int:user_id>/delete', methods=['GET', 'POST'])
+@require_user
 def deleteUser(user_id):
-    # Only the user may delete it's profile
-    if (user_id == login_session['user_id']):
-        user = getUserInfo(user_id)
-        if request.method == 'GET':
-            return render_template('deleteuser.html', user=user)
-        session.delete(user)
-        session.commit()
-        flash("Successfully deleted user")
-        return redirect(url_for('logout'))
-    return unauthorizedAccess()
+    user = getUserInfo(user_id)
+    if request.method == 'GET':
+        return render_template('deleteuser.html', user=user)
+    session.delete(user)
+    session.commit()
+    flash("Successfully deleted user")
+    return redirect(url_for('logout'))
 
 
 ############
@@ -343,31 +372,33 @@ def deleteUser(user_id):
 ############
 
 
-#############
-# JSON APIs #
-#############
+###################
+# API's endpoints #
+###################
 
 
-@app.route('/catalog/categories')
-def categoryJSON():
-    ''' Route responsible for returning a json containing all categories
+@app.route('/catalog.json')
+def catalogJSON():
+    ''' Route responsible for returning a json containing the entire catalog
     '''
     categories = getAllCategories()
-    return jsonify(Categories=[c.serialize for c in categories])
+    return jsonify(Catalog=[c.serialize for c in categories])
 
 
-@app.route('/catalog/<int:category_id>/items')
-def categoryItemsJSON(category_id):
-    ''' Route responsible for returning a json containing all items in a
-    category
+@app.route('/catalog.xml')
+def catalogXML():
+    ''' Route responsible for returning a xml containing the entire catalog
     '''
-    category_items = getCategoryItems(category_id)
-    return jsonify(Items=[i.serialize for i in category_items])
+    categories = getAllCategories()
+    categories_xml = dicttoxml.dicttoxml([c.serialize for c in categories])
+    response = make_response(categories_xml, '200')
+    response.headers['Content-Type'] = 'application/xml'
+    return response
 
 
-#################
-# End JSON APIs #
-#################
+#######################
+# End API's endpoints #
+#######################
 
 
 #################
@@ -618,7 +649,7 @@ def fbdisconnect():
 def getCategoryInfo(category_id):
     ''' Returns the category object given it's id
     '''
-    category = session.query(Category).filter_by(id=category_id).one()
+    category = session.query(Category).get(category_id)
     return category
 
 
@@ -629,31 +660,24 @@ def getAllCategories():
     return categories
 
 
-def getCategoryItems(category_id):
-    ''' Returns all items of a category, given it's id
-    '''
-    items = session.query(Item).filter_by(category_id=category_id).all()
-    return items
-
-
 def getItemInfo(item_id):
     ''' Returns an item object, given it's id
     '''
-    item = session.query(Item).filter_by(id=item_id).one()
+    item = session.query(Item).get(item_id)
     return item
 
 
 def getUserInfo(user_id):
     ''' Returns an user object, given it's id
     '''
-    user = session.query(User).filter_by(id=user_id).one()
+    user = session.query(User).get(user_id)
     return user
 
 
 def getUserByEmail(email):
     try:
         user = session.query(User).filter_by(email=email).one()
-        return User
+        return user
     except:
         return None
 
@@ -664,7 +688,7 @@ def getUserID(email):
     This method is used by the oauth login methods to check if there's an
     user with the received email.
     '''
-    user = getUserItems(email)
+    user = getUserByEmail(email)
     try:
         return user.id
     except:
@@ -686,14 +710,6 @@ def getUserItems(user_id):
 ###################
 # Generic helpers #
 ###################
-
-
-def unauthorizedAccess():
-    ''' Default unauthorized access message method.
-    '''
-    response = make_response(json.dumps('Unauthorized access'), 401)
-    response.headers['Content-Type'] = 'application/json'
-    return response
 
 
 def saveItemPicture(picture, item_id):
