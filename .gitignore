@@ -5,3 +5,6 @@ catalog_app/populatedb.py
 catalog_app/__pycache__/__init__.cpython-34.pyc
 .python-version
 catalog_app/static/.webassets-cache/
+catalog_app/static/images/
+instance/
+log/
