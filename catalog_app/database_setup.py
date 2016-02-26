@@ -1,6 +1,7 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from config.db import get_db_string
 
 Base = declarative_base()
 
@@ -60,5 +61,7 @@ class Item(Base):
         }
 
 
-engine = create_engine('sqlite:///catalog_app.db')
-Base.metadata.create_all(engine)
+if __name__ == '__main__':
+    #engine = create_engine('sqlite:///catalog_app.db')
+    engine = create_engine(get_db_string())
+    Base.metadata.create_all(engine)
