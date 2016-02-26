@@ -642,6 +642,22 @@ def fbdisconnect():
 
 
 ####################
+# Error Handlers   #
+####################
+
+
+@app.errorhandler(500)
+def internal_error(exception):
+    app.logger.error(exception)
+    return '500'
+
+
+######################
+# End Error Handlers #
+######################
+
+
+####################
 # Querying helpers #
 ####################
 
@@ -767,3 +783,5 @@ def deleteItemPicture(relative_path):
 #######################
 # End Generic helpers #
 #######################
+
+
