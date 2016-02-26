@@ -1,5 +1,7 @@
 from flask import Flask
-from instance.secret import install_secret_key
+from config.secret import install_secret_key
+from config.db import config_db_string
+from config.log import config_logger
 from flask_bootstrap import Bootstrap
 from flask_wtf.csrf import CsrfProtect
 import os
@@ -17,9 +19,14 @@ install_secret_key(app)
 Bootstrap(app)
 # csrf protection for formless views and ajax requests
 CsrfProtect(app)
+# Add logging capabilities to app when in production
+config_logger(app)
+# Build and set the db string to the app config
+config_db_string(app)
 
 # create the session here so we can import it easily from other places
-engine = create_engine('sqlite:///catalog_app/catalog_app.db')
+#engine = create_engine('sqlite:///catalog_app/catalog_app.db')
+engine = create_engine(app.config['DB_STRING'])
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
